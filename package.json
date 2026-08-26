@@ -1,8 +1,8 @@
 {
   "name": "bro-it",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
-  "description": "Explain highlighted webpage text with Codex and GPT-5.6 Luna.",
+  "description": "Explain highlighted text or answer highlighted questions with Codex and GPT-5.6 Luna.",
   "scripts": {
     "test": "node --test"
   },

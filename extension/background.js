@@ -1,19 +1,39 @@
-const MENU_ID = "bro-it-explain";
+const ROOT_MENU_ID = "bro-it-root";
+const EXPLAIN_MENU_ID = "bro-it-explain";
+const ANSWER_MENU_ID = "bro-it-answer";
 const HOST_NAME = "com.broit.native";
 
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.removeAll(() => {
-    chrome.contextMenus.create({
-      id: MENU_ID,
-      title: "Bro it",
+    const menuOptions = {
       contexts: ["selection"],
       documentUrlPatterns: ["http://*/*", "https://*/*"]
+    };
+    chrome.contextMenus.create({
+      ...menuOptions,
+      id: ROOT_MENU_ID,
+      title: "Bro It"
+    });
+    chrome.contextMenus.create({
+      ...menuOptions,
+      id: EXPLAIN_MENU_ID,
+      parentId: ROOT_MENU_ID,
+      title: "Bro it — explain simply"
+    });
+    chrome.contextMenus.create({
+      ...menuOptions,
+      id: ANSWER_MENU_ID,
+      parentId: ROOT_MENU_ID,
+      title: "Answer it — answer the question"
     });
   });
 });
 
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
-  if (info.menuItemId !== MENU_ID || !tab?.id) return;
+  const mode = info.menuItemId === EXPLAIN_MENU_ID
+    ? "explain"
+    : info.menuItemId === ANSWER_MENU_ID ? "answer" : null;
+  if (!mode || !tab?.id) return;
 
   const requestId = crypto.randomUUID();
   const frameId = info.frameId ?? 0;
@@ -25,19 +45,20 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     });
 
     if (!capture?.ok) {
-      await showError(tab.id, frameId, requestId, capture?.message || "Select some text first.");
+      await showError(tab.id, frameId, requestId, mode, capture?.message || "Select some text first.");
       return;
     }
 
     await sendToPage(tab.id, frameId, {
       type: "BRO_IT_SHOW",
       requestId,
-      state: "loading"
+      state: "loading",
+      mode
     });
 
     const response = await chrome.runtime.sendNativeMessage(HOST_NAME, {
       version: 1,
-      action: "explain",
+      action: mode,
       requestId,
       selection: capture.selection,
       context: capture.context
@@ -47,10 +68,11 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
       type: "BRO_IT_SHOW",
       requestId,
       state: response?.ok ? "success" : "error",
-      text: response?.ok ? response.text : response?.message || "Codex could not explain this selection."
+      mode,
+      text: response?.ok ? response.text : response?.message || "Codex could not process this selection."
     });
   } catch (error) {
-    await showError(tab.id, frameId, requestId, friendlyError(error)).catch(() => {});
+    await showError(tab.id, frameId, requestId, mode, friendlyError(error)).catch(() => {});
   }
 });
 
@@ -58,11 +80,12 @@ function sendToPage(tabId, frameId, message) {
   return chrome.tabs.sendMessage(tabId, message, { frameId });
 }
 
-function showError(tabId, frameId, requestId, text) {
+function showError(tabId, frameId, requestId, mode, text) {
   return sendToPage(tabId, frameId, {
     type: "BRO_IT_SHOW",
     requestId,
     state: "error",
+    mode,
     text
   });
 }

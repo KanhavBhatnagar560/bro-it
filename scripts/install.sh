@@ -33,8 +33,13 @@ chmod 755 "$install_dir/host"
 
 "$node_bin" -e '
   const fs = require("node:fs");
-  fs.writeFileSync(process.argv[1], JSON.stringify({ codexPath: process.argv[2] }, null, 2) + "\n");
-' "$install_dir/config.json" "$codex_bin"
+  fs.writeFileSync(process.argv[1], JSON.stringify({
+    codexPath: fs.realpathSync(process.argv[2]),
+    nodePath: process.argv[3]
+  }, null, 2) + "\n");
+' "$install_dir/config.json" "$codex_bin" "$node_bin"
+
+touch "$install_dir/host.log"
 
 "$node_bin" -e '
   const fs = require("node:fs");
@@ -52,4 +57,4 @@ printf '1. Open chrome://extensions\n'
 printf '2. Turn on Developer mode\n'
 printf '3. Click "Load unpacked"\n'
 printf '4. Choose: %s\n\n' "$repo_root/extension"
-printf 'Then highlight text on a webpage, right-click it, and choose "Bro it".\n'
+printf 'Then highlight text, right-click, open "Bro It", and choose Explain or Answer.\n'

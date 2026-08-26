@@ -40,7 +40,6 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     }
     if (capture.selection.length > MAX_SELECTION) {
       currentRequestId = message.requestId;
-      showBubble("error", "Select a shorter passage (4,000 characters or fewer).");
       sendResponse({ ok: false, message: "Select a shorter passage (4,000 characters or fewer)." });
       return;
     }
@@ -60,7 +59,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       return;
     }
     currentRequestId = message.requestId;
-    showBubble(message.state, message.text || "");
+    showBubble(message.state, message.text || "", message.mode || "explain");
     sendResponse({ ok: true });
   }
 });
@@ -116,7 +115,7 @@ function selectionStillMatches(capture) {
   return normalize(window.getSelection()?.toString() || "") === capture.selection;
 }
 
-function showBubble(state, text) {
+function showBubble(state, text, mode) {
   if (!bubbleHost) {
     bubbleHost = document.createElement("div");
     bubbleHost.id = "bro-it-root";
@@ -153,9 +152,16 @@ function showBubble(state, text) {
   head.className = "head";
   const dot = document.createElement("span");
   dot.className = "dot";
-  head.append(dot, document.createTextNode(state === "loading" ? "Bro is thinking" : state === "error" ? "Bro got stuck" : "Bro says"));
+  const label = state === "error"
+    ? "Bro got stuck"
+    : mode === "answer"
+      ? state === "loading" ? "Finding the answer" : "Answer"
+      : state === "loading" ? "Bro is thinking" : "Bro says";
+  head.append(dot, document.createTextNode(label));
   const body = document.createElement("div");
-  body.textContent = state === "loading" ? "Making this make sense…" : text;
+  body.textContent = state === "loading"
+    ? mode === "answer" ? "Working it out…" : "Making this make sense…"
+    : text;
   card.append(head, body);
   shadow.append(style, card);
   positionBubble();
