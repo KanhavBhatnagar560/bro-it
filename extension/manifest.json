@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Bro It",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Explain highlighted text or answer highlighted questions with Codex and GPT-5.6 Luna.",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAnz+hTAUMoGNNijqzVDuFGTAHLce7NmU3EmwnKhgAQZn0rW3uNjRI0uNBSCQ7O03vfHtm3tNPovhEPuRzmC4CoCqbMv8ZVtwYEUoiYISqM0cbLTzIsdmuVkj4sE8wQgPFIM23mfr4lVQEScQAw8mKsulgCEwd7c99xEQf1L/HhZtOBS4z5lGFlvQO+dI/huPcOU859qvBzaOBpSuhombvdK7w6ocF3TsX3hP4DhEkvoytjEpltKEdoDigg2v7e7tBl5WjwLg/rOzAJQmklLio3LyqZuol5Yv22u9Qq1DGuh1OkRdGIwgKF1nw592dOofBt4uXRGkJRWnvgbnlCasytwIDAQAB",
   "permissions": [

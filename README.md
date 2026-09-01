@@ -32,7 +32,8 @@ The installer prints the extension folder to load. Then:
 1. Highlight a word, passage, or question on a regular webpage.
 2. Right-click the selection and open **Bro It**.
 3. Choose **Bro it — explain simply** for an ELI5 explanation, or **Answer it — answer the question** for a direct answer.
-4. Click elsewhere or press Escape to dismiss the result.
+4. After an Answer result, use the box underneath it to ask follow-up questions.
+5. Click elsewhere or press Escape to dismiss the result.
 
 Explain mode is limited to 2–4 short sentences; Answer mode is limited to 1–4 concise sentences. Bro It supports selections up to 4,000 characters and sends at most 8,000 characters of surrounding context.
 
@@ -69,7 +70,7 @@ Then remove Bro It from `chrome://extensions`.
 
 ## Current scope
 
-Version 0.2 supports Google Chrome on macOS. It intentionally skips streaming, follow-up chat, prompt settings, Safari, Windows, and other Chromium browsers until the basic workflow proves useful.
+Version 0.3 supports Google Chrome on macOS. It intentionally skips streaming, saved conversations, prompt settings, Safari, Windows, and other Chromium browsers until the basic workflow proves useful.
 
 ## License
 

@@ -33,10 +33,11 @@ chmod 755 "$install_dir/host"
 
 "$node_bin" -e '
   const fs = require("node:fs");
-  fs.writeFileSync(process.argv[1], JSON.stringify({
-    codexPath: fs.realpathSync(process.argv[2]),
-    nodePath: process.argv[3]
-  }, null, 2) + "\n");
+  const codexPath = fs.realpathSync(process.argv[2]);
+  const firstLine = fs.readFileSync(codexPath).subarray(0, 160).toString("utf8").split("\n")[0];
+  const config = { codexPath };
+  if (/^#!.*(?:\/| )node(?:\s|$)/.test(firstLine)) config.nodePath = process.argv[3];
+  fs.writeFileSync(process.argv[1], JSON.stringify(config, null, 2) + "\n");
 ' "$install_dir/config.json" "$codex_bin" "$node_bin"
 
 touch "$install_dir/host.log"

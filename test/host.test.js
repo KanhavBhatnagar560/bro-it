@@ -77,6 +77,24 @@ test("answer mode directly answers the selected question", () => {
   assert.match(prompt, /at most 100 words/);
 });
 
+test("follow-up mode includes the latest answer and validates the question", () => {
+  const request = validateRequest({
+    ...validRequest,
+    action: "followup",
+    previousAnswer: "Because shorter wavelengths scatter more.",
+    question: "What does wavelength mean?"
+  });
+  const prompt = buildPrompt(request);
+
+  assert.equal(request.mode, "followup");
+  assert.match(prompt, /Previous answer: "Because shorter wavelengths scatter more\."/);
+  assert.match(prompt, /User follow-up question: "What does wavelength mean\?"/);
+  assert.throws(
+    () => validateRequest({ ...validRequest, action: "followup", previousAnswer: "Earlier answer", question: "" }),
+    (error) => error.code === "BAD_REQUEST"
+  );
+});
+
 test("npm Codex launcher works without Node on PATH", async () => {
   const fixtureDir = await fs.mkdtemp(path.join(os.tmpdir(), "bro-it-test-"));
   const fakeCodex = path.join(fixtureDir, "codex.js");
@@ -95,6 +113,30 @@ test("npm Codex launcher works without Node on PATH", async () => {
       timeoutMs: 5000
     });
     assert.equal(answer, "Plants use light to make food.");
+  } finally {
+    await fs.rm(fixtureDir, { recursive: true, force: true });
+  }
+});
+
+test("native Codex launcher runs directly without Node", async () => {
+  const fixtureDir = await fs.mkdtemp(path.join(os.tmpdir(), "bro-it-native-test-"));
+  const fakeCodex = path.join(fixtureDir, "codex");
+  await fs.writeFile(fakeCodex, `#!/bin/sh
+output=""
+while [ "$#" -gt 0 ]; do
+  if [ "$1" = "--output-last-message" ]; then output=$2; shift 2; else shift; fi
+done
+while IFS= read -r line; do :; done
+printf '%s' 'A direct native answer.' > "$output"
+`);
+  await fs.chmod(fakeCodex, 0o755);
+
+  try {
+    const answer = await runCodex(validRequest, {
+      codexPath: fakeCodex,
+      timeoutMs: 5000
+    });
+    assert.equal(answer, "A direct native answer.");
   } finally {
     await fs.rm(fixtureDir, { recursive: true, force: true });
   }

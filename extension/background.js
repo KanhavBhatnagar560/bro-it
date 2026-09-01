@@ -76,6 +76,26 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   }
 });
 
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type !== "BRO_IT_FOLLOWUP") return;
+
+  chrome.runtime.sendNativeMessage(HOST_NAME, {
+    version: 1,
+    action: "followup",
+    requestId: message.requestId,
+    selection: message.selection,
+    context: message.context,
+    previousAnswer: message.previousAnswer,
+    question: message.question
+  }).then((response) => {
+    sendResponse(response);
+  }).catch((error) => {
+    sendResponse({ ok: false, message: friendlyError(error) });
+  });
+
+  return true;
+});
+
 function sendToPage(tabId, frameId, message) {
   return chrome.tabs.sendMessage(tabId, message, { frameId });
 }

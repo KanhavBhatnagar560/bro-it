@@ -1,5 +1,6 @@
 const MAX_SELECTION = 4000;
 const MAX_CONTEXT = 8000;
+const MAX_FOLLOWUP = 1000;
 const SEMANTIC_BLOCKS = "p, li, blockquote, td, th, dd, dt, figcaption, pre";
 
 let lastCapture = null;
@@ -24,6 +25,7 @@ document.addEventListener("keydown", (event) => {
 document.addEventListener("selectionchange", () => {
   if (!bubbleHost || !lastCapture) return;
   queueMicrotask(() => {
+    if (bubbleHost?.shadowRoot?.activeElement) return;
     if (bubbleHost && !selectionStillMatches(lastCapture)) dismiss();
   });
 });
@@ -142,6 +144,13 @@ function showBubble(state, text, mode) {
     .error { color: #8a2f2f; border-color: rgba(138, 47, 47, .2); }
     .error .head { color: #8a2f2f; }
     .error .dot { background: #b64e4e; }
+    form { display: flex; gap: 6px; margin-top: 9px; }
+    input { box-sizing: border-box; min-width: 0; flex: 1; padding: 7px 9px; border: 1px solid rgba(20, 24, 32, .18);
+      border-radius: 8px; color: #172019; background: #fff; font: inherit; outline: none; }
+    input:focus { border-color: #4d9a68; box-shadow: 0 0 0 2px rgba(77, 154, 104, .16); }
+    button { padding: 7px 10px; border: 0; border-radius: 8px; color: #fff; background: #39724e;
+      font: 700 12px/1 ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, sans-serif; cursor: pointer; }
+    input:disabled, button:disabled { cursor: wait; opacity: .6; }
     @keyframes pulse { to { transform: scale(1.55); opacity: .35; } }
     @media (prefers-reduced-motion: reduce) { .loading .dot { animation: none; } }
   `;
@@ -163,8 +172,54 @@ function showBubble(state, text, mode) {
     ? mode === "answer" ? "Working it out…" : "Making this make sense…"
     : text;
   card.append(head, body);
+  if (state === "success" && mode === "answer") card.append(followupForm(text));
   shadow.append(style, card);
   positionBubble();
+}
+
+function followupForm(previousAnswer) {
+  const form = document.createElement("form");
+  const input = document.createElement("input");
+  input.type = "text";
+  input.maxLength = MAX_FOLLOWUP;
+  input.placeholder = "Ask a follow-up…";
+  input.setAttribute("aria-label", "Ask a follow-up question");
+  const button = document.createElement("button");
+  button.type = "submit";
+  button.textContent = "Ask";
+  form.append(input, button);
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const question = input.value.trim();
+    if (!question || !lastCapture || !currentRequestId) return;
+    const requestId = currentRequestId;
+
+    input.disabled = true;
+    button.disabled = true;
+    button.textContent = "…";
+    try {
+      const response = await chrome.runtime.sendMessage({
+        type: "BRO_IT_FOLLOWUP",
+        requestId,
+        selection: lastCapture.selection,
+        context: lastCapture.context,
+        previousAnswer,
+        question
+      });
+      if (currentRequestId !== requestId) return;
+      showBubble(
+        response?.ok ? "success" : "error",
+        response?.ok ? response.text : response?.message || "Codex could not answer that follow-up.",
+        "answer"
+      );
+    } catch {
+      if (currentRequestId !== requestId) return;
+      showBubble("error", "Bro It hit an unexpected error. Try again.", "answer");
+    }
+  });
+
+  return form;
 }
 
 function rangeRect(range) {
